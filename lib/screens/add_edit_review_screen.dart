@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class AddEditReviewScreen extends StatefulWidget {
   final String username;
@@ -17,7 +19,9 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
   final _ratingController = TextEditingController();
   final _commentController = TextEditingController();
   final _apiService = ApiService();
+  final _imagePicker = ImagePicker();
   bool _isFavorite = false;
+  File? _imageFile;
 
   @override
   void initState() {
@@ -27,6 +31,22 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
       _ratingController.text = widget.review!['rating'].toString();
       _commentController.text = widget.review!['comment'];
       _isFavorite = widget.review!['isFavorite'] ?? false;
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? pickedFile =
+          await _imagePicker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() {
+          _imageFile = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking image: $e')),
+      );
     }
   }
 
@@ -71,11 +91,35 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(isEditMode ? 'Edit Review' : 'Tambah Review')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (_imageFile != null)
+              Container(
+                height: 300,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(
+                    _imageFile!,
+                    height: double.infinity,
+                    width: double.infinity,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: _pickImage,
+              icon: Icon(Icons.photo_camera),
+              label: Text('Pilih Gambar'),
+            ),
+            SizedBox(height: 16),
             TextField(
               controller: _titleController,
               decoration: InputDecoration(labelText: 'Judul Film'),
@@ -89,6 +133,7 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
             TextField(
               controller: _commentController,
               decoration: InputDecoration(labelText: 'Komentar'),
+              maxLines: 3,
             ),
             SwitchListTile(
               title: Text('Favorit'),
