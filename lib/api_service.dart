@@ -61,7 +61,7 @@ class ApiService {
   }
 
   Future<bool> addReview(String username, String title, int rating,
-      String comment, bool isFavorite) async {
+      String comment, bool isLiked, String? imageBase64) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/reviews'),
@@ -71,7 +71,8 @@ class ApiService {
           'title': title,
           'rating': rating,
           'comment': comment,
-          'isFavorite': isFavorite
+          'isLiked': isLiked,
+          'imageBase64': imageBase64,
         }),
       );
       return response.statusCode == 201;
@@ -82,7 +83,7 @@ class ApiService {
   }
 
   Future<bool> updateReview(String id, String username, String title,
-      int rating, String comment, bool isFavorite) async {
+      int rating, String comment, bool isLiked, String? imageBase64) async {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/reviews/$id'),
@@ -92,7 +93,8 @@ class ApiService {
           'title': title,
           'rating': rating,
           'comment': comment,
-          'isFavorite': isFavorite
+          'isLiked': isLiked,
+          'imageBase64': imageBase64,
         }),
       );
       print('Response status: ${response.statusCode}');

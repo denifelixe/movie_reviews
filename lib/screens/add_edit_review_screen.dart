@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../api_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:convert';
 
 class AddEditReviewScreen extends StatefulWidget {
   final String username;
@@ -20,8 +21,9 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
   final _commentController = TextEditingController();
   final _apiService = ApiService();
   final _imagePicker = ImagePicker();
-  bool _isFavorite = false;
+  bool _isLiked = false;
   File? _imageFile;
+  String? _imageBase64;
 
   @override
   void initState() {
@@ -30,17 +32,24 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
       _titleController.text = widget.review!['title'];
       _ratingController.text = widget.review!['rating'].toString();
       _commentController.text = widget.review!['comment'];
-      _isFavorite = widget.review!['isFavorite'] ?? false;
+      _isLiked = widget.review!['isLiked'] ?? false;
+      _imageBase64 = widget.review!['imageBase64'];
     }
   }
 
   Future<void> _pickImage() async {
     try {
-      final XFile? pickedFile =
-          await _imagePicker.pickImage(source: ImageSource.gallery);
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800, // Limit image size
+        maxHeight: 800,
+        imageQuality: 85, // Compress image
+      );
       if (pickedFile != null) {
+        final bytes = await pickedFile.readAsBytes();
         setState(() {
           _imageFile = File(pickedFile.path);
+          _imageBase64 = base64Encode(bytes);
         });
       }
     } catch (e) {
@@ -69,11 +78,24 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
     if (widget.review == null) {
       // Tambah review baru
       success = await _apiService.addReview(
-          widget.username, title, rating, comment, _isFavorite);
+        widget.username,
+        title,
+        rating,
+        comment,
+        _isLiked,
+        _imageBase64,
+      );
     } else {
       // Edit review
-      success = await _apiService.updateReview(widget.review!['_id'],
-          widget.username, title, rating, comment, _isFavorite);
+      success = await _apiService.updateReview(
+        widget.review!['_id'],
+        widget.username,
+        title,
+        rating,
+        comment,
+        _isLiked,
+        _imageBase64,
+      );
     }
 
     if (success) {
@@ -96,7 +118,7 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_imageFile != null)
+            if (_imageFile != null || _imageBase64 != null)
               Container(
                 height: 300,
                 decoration: BoxDecoration(
@@ -105,12 +127,19 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.file(
-                    _imageFile!,
-                    height: double.infinity,
-                    width: double.infinity,
-                    fit: BoxFit.contain,
-                  ),
+                  child: _imageFile != null
+                      ? Image.file(
+                          _imageFile!,
+                          height: double.infinity,
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                        )
+                      : Image.memory(
+                          base64Decode(_imageBase64!),
+                          height: double.infinity,
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                        ),
                 ),
               ),
             SizedBox(height: 8),
@@ -136,11 +165,11 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
               maxLines: 3,
             ),
             SwitchListTile(
-              title: Text('Favorit'),
-              value: _isFavorite,
+              title: Text('I Like This'),
+              value: _isLiked,
               onChanged: (bool value) {
                 setState(() {
-                  _isFavorite = value;
+                  _isLiked = value;
                 });
               },
             ),
