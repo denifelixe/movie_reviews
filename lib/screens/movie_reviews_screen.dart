@@ -5,7 +5,8 @@ import 'add_edit_review_screen.dart';
 class MovieReviewsScreen extends StatefulWidget {
   final String username;
 
-  const MovieReviewsScreen({Key? key, required this.username}) : super(key: key);
+  const MovieReviewsScreen({Key? key, required this.username})
+      : super(key: key);
 
   @override
   _MovieReviewsScreenState createState() => _MovieReviewsScreenState();
@@ -39,6 +40,25 @@ class _MovieReviewsScreenState extends State<MovieReviewsScreen> {
     }
   }
 
+  void _toggleFavorite(Map<String, dynamic> review) async {
+    final success = await _apiService.updateReview(
+      review['_id'],
+      review['username'],
+      review['title'],
+      review['rating'],
+      review['comment'],
+      !(review['isFavorite'] ?? false),
+    );
+
+    if (success) {
+      _loadReviews();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengubah status favorit')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,7 +71,8 @@ class _MovieReviewsScreenState extends State<MovieReviewsScreen> {
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => AddEditReviewScreen(username: widget.username),
+                  builder: (context) =>
+                      AddEditReviewScreen(username: widget.username),
                 ),
               );
               if (result == true) _loadReviews();
@@ -67,8 +88,20 @@ class _MovieReviewsScreenState extends State<MovieReviewsScreen> {
                 final review = _reviews[index];
                 return ListTile(
                   title: Text(review['title']),
-                  subtitle: Text('${review['rating']} / 10\n${review['comment']}'),
+                  subtitle:
+                      Text('${review['rating']} / 10\n${review['comment']}'),
                   isThreeLine: true,
+                  leading: IconButton(
+                    icon: Icon(
+                      review['isFavorite'] == true
+                          ? Icons.star
+                          : Icons.star_border,
+                      color: review['isFavorite'] == true
+                          ? Colors.amber
+                          : Colors.grey,
+                    ),
+                    onPressed: () => _toggleFavorite(review),
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

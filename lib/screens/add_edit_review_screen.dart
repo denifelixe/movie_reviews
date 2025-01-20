@@ -5,7 +5,8 @@ class AddEditReviewScreen extends StatefulWidget {
   final String username;
   final Map<String, dynamic>? review;
 
-  const AddEditReviewScreen({Key? key, required this.username, this.review}) : super(key: key);
+  const AddEditReviewScreen({Key? key, required this.username, this.review})
+      : super(key: key);
 
   @override
   _AddEditReviewScreenState createState() => _AddEditReviewScreenState();
@@ -16,6 +17,7 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
   final _ratingController = TextEditingController();
   final _commentController = TextEditingController();
   final _apiService = ApiService();
+  bool _isFavorite = false;
 
   @override
   void initState() {
@@ -24,6 +26,7 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
       _titleController.text = widget.review!['title'];
       _ratingController.text = widget.review!['rating'].toString();
       _commentController.text = widget.review!['comment'];
+      _isFavorite = widget.review!['isFavorite'] ?? false;
     }
   }
 
@@ -35,7 +38,9 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
     // Validasi input
     if (title.isEmpty || rating < 1 || rating > 10 || comment.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Data tidak valid. Judul, komentar, dan rating (1-10) harus diisi.')),
+        SnackBar(
+            content: Text(
+                'Data tidak valid. Judul, komentar, dan rating (1-10) harus diisi.')),
       );
       return;
     }
@@ -43,14 +48,16 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
     bool success;
     if (widget.review == null) {
       // Tambah review baru
-      success = await _apiService.addReview(widget.username, title, rating, comment);
+      success = await _apiService.addReview(
+          widget.username, title, rating, comment, _isFavorite);
     } else {
       // Edit review
-      success = await _apiService.updateReview(widget.review!['_id'], widget.username, title, rating, comment);
+      success = await _apiService.updateReview(widget.review!['_id'],
+          widget.username, title, rating, comment, _isFavorite);
     }
 
     if (success) {
-      Navigator.pop(context, true); // Berhasil, kembali ke layar sebelumnya
+      Navigator.pop(context, true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal menyimpan review')),
@@ -72,7 +79,7 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
             TextField(
               controller: _titleController,
               decoration: InputDecoration(labelText: 'Judul Film'),
-              readOnly: isEditMode, // Nonaktifkan input jika dalam mode edit
+              readOnly: isEditMode,
             ),
             TextField(
               controller: _ratingController,
@@ -82,6 +89,15 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
             TextField(
               controller: _commentController,
               decoration: InputDecoration(labelText: 'Komentar'),
+            ),
+            SwitchListTile(
+              title: Text('Favorit'),
+              value: _isFavorite,
+              onChanged: (bool value) {
+                setState(() {
+                  _isFavorite = value;
+                });
+              },
             ),
             SizedBox(height: 20),
             ElevatedButton(
