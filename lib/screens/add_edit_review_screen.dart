@@ -152,7 +152,6 @@ class _AddEditReviewScreenState extends State<AddEditReviewScreen> {
             TextField(
               controller: _titleController,
               decoration: InputDecoration(labelText: 'Judul Film'),
-              readOnly: isEditMode,
             ),
             TextField(
               controller: _ratingController,
