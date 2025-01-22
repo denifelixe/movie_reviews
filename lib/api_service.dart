@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   static const String baseUrl =
-      'https://crudcrud.com/api/c42d71c045fb4d048a8b5d5aa7368485';
+      'https://crudcrud.com/api/6160c5c7515547089872b9eeea3ff143';
 
   Future<bool> registerUser(String username, String password) async {
     try {
